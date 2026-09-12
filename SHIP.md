@@ -1,11 +1,11 @@
-# VeriLens 0.2.3 â€” ship checklist
+# VeriLens 0.2.4 — ship checklist
 
 ## Unpacked load (fastest path)
 
 1. Start the local analyze server if you will use hosted fallback
    (sibling `VeriLens\backend\`, default `http://127.0.0.1:8787/analyze`).
-2. Chrome â†’ `chrome://extensions` â†’ enable **Developer mode**.
-3. **Load unpacked** â†’ select:
+2. Chrome → `chrome://extensions` → enable **Developer mode**.
+3. **Load unpacked** → select:
 
    `C:\Users\fight\Downloads\VeriLens`
 
@@ -44,7 +44,7 @@ node scripts/pack.mjs
 
 Output:
 
-`C:\Users\fight\Downloads\VeriLens\dist\verilens-0.2.3.zip`
+`C:\Users\fight\Downloads\VeriLens\dist\verilens-0.2.4.zip`
 
 The zip is the extension only (no `backend/`, no `.git`, no `node_modules`,
 no `.env` / `**/.env`).
@@ -67,13 +67,13 @@ Optional endpoint override:
 VERILENS_ENDPOINT=http://127.0.0.1:8787/analyze node scripts/symmetry-check.mjs --ship-gate
 ```
 
-Live rules (0.2.3):
+Live rules (0.2.4):
 
 - Per-story left/right pairing (same `id` on both sides).
-- Every known-loaded cartoon must produce â‰¥1 valid flag; silent sides FAIL.
+- Every known-loaded cartoon must produce ≥1 valid flag; silent sides FAIL.
 - 0-vs-0 pairs FAIL as theater.
 - Asymmetry uses paired flag-**count** ratios (`maxCountRatio` / `maxPairRatio`
-  in `fixtures/symmetry.json`), **not** binary any-flag Î”â‰¤0.4 with n=5
+  in `fixtures/symmetry.json`), **not** binary any-flag Δ≤0.4 with n=5
   (that previously allowed 5-vs-3).
 
 `--offline` + `--ship-gate` together exits non-zero.
@@ -86,38 +86,44 @@ node scripts/symmetry-check.mjs --offline
 
 ## Pre-flight
 
-- [ ] `manifest.json` version is `0.2.3`
+- [ ] `manifest.json` version is `0.2.4`
+- [ ] `host_permissions` includes `https://*/*`, `http://*/*`, and localhost:8787
 - [ ] Icons `icons/icon16.png`, `icon48.png`, `icon128.png` load
 - [ ] Side panel appears on toolbar click
+- [ ] Panel READY auto-extract works on BBC/Reuters without relying on `onClicked`
+- [ ] Restricted tabs (chrome:, about:, file PDF) show a clear error
+- [ ] Inject failures surface the real `executeScript` message in VERILENS_STATUS
 - [ ] Rapid re-clicks ignore stale analyze results (generation token)
 - [ ] EXTRACT_RESULT bound to click generation + tabId (late extract ignored)
 - [ ] AbortSignal passed through analyzeArticle -> hosted fetch (and Nano when supported)
 - [ ] Extract works on a Reuters/AP-style article
-- [ ] Hosted POST body is `{ "text": "..." }` only â€” no API key
+- [ ] Hosted POST body is `{ "text": "..." }` only — no API key
 - [ ] Hosted path shows the disclosure
 - [ ] `neverHosted` fails closed when Nano is missing
 - [ ] `node scripts/symmetry-check.mjs --ship-gate` PASS (live backend)
 - [ ] Options page saves `preferNano`, `hostedEndpoint`, `neverHosted`
-- [ ] Custom HTTP hosted origins can request `http://*/*` optional host permission
 - [ ] Validate rejects empty `neutralVersion` (non-empty input), empty `reason`,
       and quotes not present in source (whitespace-normalized)
 
 ## Host permissions
 
-- Hard-coded localhost analyze: `http://127.0.0.1:8787/*`, `http://localhost:8787/*`
-- Optional (user-granted via Options `ensureHostPermission`):
-  - `https://*/*`
-  - `http://*/*` â€” required so custom **HTTP** backends (not just HTTPS) work
+- Required (install-time):
+  - `http://127.0.0.1:8787/*`, `http://localhost:8787/*` — default local analyze
+  - `https://*/*`, `http://*/*` — article scripting without depending on `activeTab`
+    when `setPanelBehavior({ openPanelOnActionClick: true })` skips `onClicked`
+- Options `ensureHostPermission` still no-ops usefully for custom endpoints
+  covered by the broad http(s) grants.
 
 ## Store listing notes
 
 - Single purpose: flag loaded language/framing on the current article.
 - Privacy justification matches PRIVACY.md.
 - Remote code: none. Hosted AI is a user-configured `fetch` of article text.
-- Permission justification: activeTab user gesture only.
+- Permission justification: user opens VeriLens on the current article; host
+  access is required so extract works when the panel opens without `onClicked`.
 
 ## Do not
 
 - Put API keys in the extension or ship `.env` in the zip.
 - Treat `--offline` symmetry as a bias/ship PASS.
-- Overwrite `backend/` casually â€” that is a sibling deliverable.
+- Overwrite `backend/` casually — that is a sibling deliverable.

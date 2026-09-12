@@ -32,13 +32,16 @@ If both paths are unavailable, analysis fails and nothing further is sent.
 - `storage` — settings and local feedback.
 - `sidePanel` — show results beside the article.
 - Host access to `http://127.0.0.1:8787` / `localhost:8787` for the default
-  local backend. A custom HTTPS endpoint asks for optional host permission.
+  local backend, plus required `https://*/*` and `http://*/*` so article
+  extraction can run on news sites when the side panel opens without a
+  separate `activeTab` gesture (Chrome often skips `action.onClicked` when
+  `openPanelOnActionClick` is enabled).
 
 ## What we do not do
 
 - No API keys or secrets in the extension package.
 - No remote code.
-- No automatic collection from sites you did not click Analyze on.
+- No automatic collection from sites you did not open VeriLens on.
 - Feedback never leaves the browser unless you export it yourself.
 
 ## Contact

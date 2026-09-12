@@ -1,15 +1,13 @@
 {
   "manifest_version": 3,
   "name": "VeriLens",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Flags loaded language and framing in the article you're reading, and shows a minimal fact-preserving neutral version side-by-side.",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
   "host_permissions": [
     "http://127.0.0.1:8787/*",
-    "http://localhost:8787/*"
-  ],
-  "optional_host_permissions": [
+    "http://localhost:8787/*",
     "https://*/*",
     "http://*/*"
   ],

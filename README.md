@@ -4,7 +4,7 @@ Flags loaded language and framing in the article you're already reading and
 shows a minimal, fact-preserving neutral version side-by-side. The original
 is always shown in full; nothing is hidden or summarized.
 
-**Version 0.2.3** — production Chrome MV3 extension. No API keys in the bundle.
+**Version 0.2.4** — production Chrome MV3 extension. No API keys in the bundle.
 
 ## Load it (unpacked)
 
@@ -51,13 +51,15 @@ as "neutral." Do it before trusting any output, not after.
 node scripts/pack.mjs
 ```
 
-Writes `dist/verilens-0.2.3.zip` (extension only; does not include `backend/`).
+Writes `dist/verilens-0.2.4.zip` (extension only; does not include `backend/`).
 
 ## Known limitations (by design)
 
 - No mobile support (Chrome extensions don't run on mobile Chrome).
 - Omission bias is out of scope — single-article analysis cannot detect what a story left out.
-- `activeTab` means it only runs when you click the icon, on the current tab.
+- Analysis starts when you open the panel (toolbar click). Required `host_permissions`
+  for `http(s)://*/*` let scripting run even when `action.onClicked` is swallowed by
+  `sidePanel.setPanelBehavior({ openPanelOnActionClick: true })`.
 
 ## Vendored code
 

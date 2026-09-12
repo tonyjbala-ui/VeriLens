@@ -107,6 +107,44 @@ function sidePanelAvailable() {
   return Boolean(chrome.sidePanel?.setOptions && chrome.sidePanel?.open);
 }
 
+/**
+ * Pages we cannot (or should not) inject into: browser UI, about:, and local PDFs.
+ * Missing url (common on restricted pages without tabs permission) is treated as restricted.
+ */
+function describeRestrictedTabUrl(url) {
+  if (url == null || url === "") {
+    return "This tab has no usable URL (browser UI or restricted page). Open a normal http(s) news article.";
+  }
+  let lower;
+  try {
+    lower = String(url).toLowerCase();
+  } catch {
+    return "This tab URL is unreadable. Open a normal http(s) news article.";
+  }
+  if (
+    lower.startsWith("chrome:") ||
+    lower.startsWith("chrome-extension:") ||
+    lower.startsWith("brave:") ||
+    lower.startsWith("edge:") ||
+    lower.startsWith("about:") ||
+    lower.startsWith("devtools:") ||
+    lower.startsWith("view-source:")
+  ) {
+    return `Can't analyze browser/internal pages (${lower.split(":")[0]}:). Open a normal http(s) news article.`;
+  }
+  if (lower.startsWith("file:")) {
+    if (lower.includes(".pdf") || lower.endsWith("pdf")) {
+      return "Can't analyze local PDF files. Open the article as a normal http(s) web page.";
+    }
+    return "Can't analyze local file:// pages. Open a normal http(s) news article.";
+  }
+  // Chrome's built-in PDF viewer often sits on chrome-extension:// or blob:; also catch *.pdf on http(s) viewer shells
+  if (/\.pdf($|\?|#)/i.test(lower) && (lower.startsWith("blob:") || lower.includes("pdf"))) {
+    return "Can't analyze PDF viewer tabs. Open the article as a normal http(s) web page.";
+  }
+  return null;
+}
+
 async function enableOpenPanelOnActionClick() {
   if (!chrome.sidePanel?.setPanelBehavior) {
     console.error("VeriLens: chrome.sidePanel.setPanelBehavior missing");
@@ -171,11 +209,31 @@ async function openSidePanelForTab(tab) {
  * Inject extractor and start analyze pipeline for a tab.
  * Uses generation map so a concurrent onClicked + PANEL_READY kickoff
  * does not double-start the same wave.
+ *
+ * With host_permissions https://*/* + http://*/*, inject works from panel
+ * READY without relying on activeTab. Prefer onClicked when it fires (user
+ * gesture); PANEL_READY remains the fallback when setPanelBehavior swallows
+ * onClicked.
  */
 async function startExtractAndAnalyze(tab, { force = false } = {}) {
   if (!tab?.id) return false;
 
   if (!force && isAnalysisInFlight(tab.id)) {
+    return false;
+  }
+
+  const restricted = describeRestrictedTabUrl(tab.url);
+  if (restricted) {
+    const { generation } = beginAnalyzeGeneration();
+    extractGenerationByTab.set(tab.id, generation);
+    panelSessionHadStart = true;
+    extractGenerationByTab.delete(tab.id);
+    setErrorBadge("Restricted page");
+    sendToPanel({
+      type: "VERILENS_STATUS",
+      status: "error",
+      error: restricted
+    });
     return false;
   }
 
@@ -204,6 +262,7 @@ async function startExtractAndAnalyze(tab, { force = false } = {}) {
     });
     return true;
   } catch (err) {
+    const detail = err?.message || String(err);
     console.error("VeriLens: inject failed", err);
     if (extractGenerationByTab.get(tab.id) === generation) {
       extractGenerationByTab.delete(tab.id);
@@ -212,7 +271,9 @@ async function startExtractAndAnalyze(tab, { force = false } = {}) {
     sendToPanel({
       type: "VERILENS_STATUS",
       status: "error",
-      error: "Couldn't access this page. Try a standard article page (not chrome:// or a PDF)."
+      error:
+        "Couldn't access this page. Try a standard article page (not chrome:// or a PDF). " +
+        `Details: ${detail}`
     });
     return false;
   }
@@ -249,6 +310,7 @@ enableOpenPanelOnActionClick();
 // User clicks the toolbar icon -> activeTab-granting user gesture when it fires.
 // With setPanelBehavior({ openPanelOnActionClick: true }), Chrome often does NOT
 // fire onClicked; Brave may be flaky either way — PANEL_READY kickoff covers that.
+// When onClicked DOES fire, inject here (user gesture path) with force:true.
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab?.id) return;
 
