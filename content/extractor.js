@@ -75,18 +75,23 @@ function extractWithReadability() {
   }
 }
 
+// Bound by service-worker before this file is injected (click generation).
+const generation = globalThis.__VERILENS_EXTRACT_GENERATION__;
+
 const result = extractWithReadability() || simpleExtract();
 
 if (!result.text || result.paragraphCount < 2) {
   chrome.runtime.sendMessage({
     type: "VERILENS_EXTRACT_RESULT",
     ok: false,
+    generation,
     error: "Couldn't find enough article text on this page. VeriLens works best on standard news article pages."
   });
 } else {
   chrome.runtime.sendMessage({
     type: "VERILENS_EXTRACT_RESULT",
     ok: true,
+    generation,
     article: result
   });
 }

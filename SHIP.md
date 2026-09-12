@@ -1,4 +1,4 @@
-# VeriLens 0.2.1 — ship checklist
+# VeriLens 0.2.2 — ship checklist
 
 ## Unpacked load (fastest path)
 
@@ -44,7 +44,7 @@ node scripts/pack.mjs
 
 Output:
 
-`C:\Users\fight\Downloads\VeriLens\dist\verilens-0.2.1.zip`
+`C:\Users\fight\Downloads\VeriLens\dist\verilens-0.2.2.zip`
 
 The zip is the extension only (no `backend/`, no `.git`, no `node_modules`,
 no `.env` / `**/.env`).
@@ -67,7 +67,7 @@ Optional endpoint override:
 VERILENS_ENDPOINT=http://127.0.0.1:8787/analyze node scripts/symmetry-check.mjs --ship-gate
 ```
 
-Live rules (0.2.1):
+Live rules (0.2.2):
 
 - Per-story left/right pairing (same `id` on both sides).
 - Every known-loaded cartoon must produce ≥1 valid flag; silent sides FAIL.
@@ -86,10 +86,12 @@ node scripts/symmetry-check.mjs --offline
 
 ## Pre-flight
 
-- [ ] `manifest.json` version is `0.2.1`
+- [ ] `manifest.json` version is `0.2.2`
 - [ ] Icons `icons/icon16.png`, `icon48.png`, `icon128.png` load
 - [ ] Side panel appears on toolbar click
 - [ ] Rapid re-clicks ignore stale analyze results (generation token)
+- [ ] EXTRACT_RESULT bound to click generation + tabId (late extract ignored)
+- [ ] AbortSignal passed through analyzeArticle -> hosted fetch (and Nano when supported)
 - [ ] Extract works on a Reuters/AP-style article
 - [ ] Hosted POST body is `{ "text": "..." }` only — no API key
 - [ ] Hosted path shows the disclosure

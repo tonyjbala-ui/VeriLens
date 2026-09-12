@@ -10,6 +10,11 @@ const outboundQueue = [];
 let analyzeGeneration = 0;
 /** AbortController for the in-flight analyze, if any. */
 let analyzeAbort = null;
+/**
+ * tabId -> generation that owns the in-flight extract for that tab.
+ * Set when inject starts; EXTRACT_RESULT must match or it is ignored.
+ */
+const extractGenerationByTab = new Map();
 
 function sendToPanel(message) {
   if (!panelReady) {
@@ -49,8 +54,9 @@ function beginAnalyzeGeneration() {
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab?.id) return;
 
-  // New click supersedes any in-flight analyze from a prior click.
-  beginAnalyzeGeneration();
+  // New click supersedes any in-flight analyze / extract from a prior click.
+  const { generation } = beginAnalyzeGeneration();
+  extractGenerationByTab.set(tab.id, generation);
 
   try {
     await chrome.sidePanel.setOptions({
@@ -71,11 +77,28 @@ chrome.action.onClicked.addListener(async (tab) => {
   sendToPanel({ type: "VERILENS_STATUS", status: "extracting" });
 
   try {
+    // Tag the page with this click's generation before extractor runs so
+    // VERILENS_EXTRACT_RESULT can be bound to generation + tabId.
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      files: ["lib/readability.js", "content/extractor.js"]
+      files: ["lib/readability.js"]
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (gen) => {
+        globalThis.__VERILENS_EXTRACT_GENERATION__ = gen;
+      },
+      args: [generation]
+    });
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: ["content/extractor.js"]
     });
   } catch {
+    // Inject failed — drop binding so a late stray result cannot claim this gen.
+    if (extractGenerationByTab.get(tab.id) === generation) {
+      extractGenerationByTab.delete(tab.id);
+    }
     sendToPanel({
       type: "VERILENS_STATUS",
       status: "error",
@@ -93,7 +116,7 @@ chrome.runtime.onConnect.addListener((port) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "VERILENS_PANEL_READY") {
     panelReady = true;
     flushQueue();
@@ -103,13 +126,31 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg?.type !== "VERILENS_EXTRACT_RESULT") return false;
 
+  const tabId = sender?.tab?.id;
+  const msgGen = msg.generation;
+
+  // Bind extract to the click that injected it: require tab + generation match.
+  if (
+    tabId == null ||
+    msgGen == null ||
+    extractGenerationByTab.get(tabId) !== msgGen ||
+    msgGen !== analyzeGeneration
+  ) {
+    return false;
+  }
+
+  // This extract owns the current generation; clear pending binding.
+  extractGenerationByTab.delete(tabId);
+
   if (!msg.ok) {
     sendToPanel({ type: "VERILENS_STATUS", status: "error", error: msg.error });
     return false;
   }
 
-  // Serialize: cancel/ignore older in-flight when a new extract starts analyze.
-  const { generation, signal } = beginAnalyzeGeneration();
+  // Reuse the click's generation + AbortSignal — do NOT bump again here
+  // (a late extract must not call beginAnalyzeGeneration and win).
+  const generation = msgGen;
+  const signal = analyzeAbort?.signal;
 
   sendToPanel({ type: "VERILENS_STATUS", status: "analyzing" });
 
@@ -120,7 +161,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       const settings = await getSettings();
       const articleText = msg.article?.text || "";
       const analysis = validateAnalysis(
-        await analyzeArticle(articleText, settings),
+        await analyzeArticle(articleText, { ...settings, signal }),
         articleText
       );
 
@@ -135,6 +176,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       });
     } catch (err) {
       if (signal?.aborted || generation !== analyzeGeneration) return;
+      if (err?.name === "AbortError") return;
       sendToPanel({
         type: "VERILENS_ANALYSIS_RESULT",
         ok: false,
