@@ -1,28 +1,38 @@
 #!/usr/bin/env node
-// Pack the unpacked extension into dist/verilens-0.2.0.zip
-// Excludes backend/, dist/, .git, node_modules.
+// Pack the unpacked extension into dist/verilens-<version>.zip
+// Excludes backend/, dist/, .git, node_modules, and always skips .env / **/.env.
 
 import { createWriteStream, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { deflateRawSync, crc32 } from "node:zlib";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const manifest = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8"));
+const version = manifest.version || "0.0.0";
 const outDir = join(root, "dist");
-const outFile = join(outDir, "verilens-0.2.0.zip");
+const outFile = join(outDir, `verilens-${version}.zip`);
 
 const SKIP_DIRS = new Set(["backend", "dist", ".git", "node_modules"]);
 const SKIP_FILES = new Set([".DS_Store"]);
 
+function isEnvFile(name) {
+  // Always skip .env and any **/.env (exact basename .env).
+  return name === ".env";
+}
+
 function walk(dir, acc = []) {
   for (const name of readdirSync(dir)) {
-    if (SKIP_FILES.has(name)) continue;
+    if (SKIP_FILES.has(name) || isEnvFile(name)) continue;
     const full = join(dir, name);
     const st = statSync(full);
     if (st.isDirectory()) {
       if (SKIP_DIRS.has(name)) continue;
       walk(full, acc);
     } else {
+      // Skip nested paths whose basename is .env (already handled) and dotenv variants
+      // that are clearly secrets: .env.local, .env.production, etc.
+      if (basename(full) === ".env" || /^\.env(\.|$)/.test(basename(full))) continue;
       acc.push(full);
     }
   }

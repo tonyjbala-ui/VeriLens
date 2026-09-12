@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "VeriLens",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Flags loaded language and framing in the article you're reading, and shows a minimal fact-preserving neutral version side-by-side.",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
@@ -10,7 +10,8 @@
     "http://localhost:8787/*"
   ],
   "optional_host_permissions": [
-    "https://*/*"
+    "https://*/*",
+    "http://*/*"
   ],
   "action": {
     "default_title": "VeriLens: Analyze this article",

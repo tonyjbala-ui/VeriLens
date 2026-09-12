@@ -6,6 +6,11 @@ import { getSettings } from "../lib/settings.js";
 let panelReady = false;
 const outboundQueue = [];
 
+/** Monotonic generation: bump on each new analyze request; ignore stale completions. */
+let analyzeGeneration = 0;
+/** AbortController for the in-flight analyze, if any. */
+let analyzeAbort = null;
+
 function sendToPanel(message) {
   if (!panelReady) {
     outboundQueue.push(message);
@@ -27,9 +32,25 @@ function flushQueue() {
   }
 }
 
+function beginAnalyzeGeneration() {
+  analyzeGeneration += 1;
+  if (analyzeAbort) {
+    try {
+      analyzeAbort.abort();
+    } catch {
+      /* ignore */
+    }
+  }
+  analyzeAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+  return { generation: analyzeGeneration, signal: analyzeAbort?.signal };
+}
+
 // User clicks the toolbar icon -> this is our activeTab-granting user gesture.
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab?.id) return;
+
+  // New click supersedes any in-flight analyze from a prior click.
+  beginAnalyzeGeneration();
 
   try {
     await chrome.sidePanel.setOptions({
@@ -87,14 +108,25 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return false;
   }
 
+  // Serialize: cancel/ignore older in-flight when a new extract starts analyze.
+  const { generation, signal } = beginAnalyzeGeneration();
+
   sendToPanel({ type: "VERILENS_STATUS", status: "analyzing" });
 
   (async () => {
     try {
+      if (signal?.aborted || generation !== analyzeGeneration) return;
+
       const settings = await getSettings();
+      const articleText = msg.article?.text || "";
       const analysis = validateAnalysis(
-        await analyzeArticle(msg.article.text, settings)
+        await analyzeArticle(articleText, settings),
+        articleText
       );
+
+      // Ignore stale results from an older generation.
+      if (signal?.aborted || generation !== analyzeGeneration) return;
+
       sendToPanel({
         type: "VERILENS_ANALYSIS_RESULT",
         ok: true,
@@ -102,6 +134,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         analysis
       });
     } catch (err) {
+      if (signal?.aborted || generation !== analyzeGeneration) return;
       sendToPanel({
         type: "VERILENS_ANALYSIS_RESULT",
         ok: false,

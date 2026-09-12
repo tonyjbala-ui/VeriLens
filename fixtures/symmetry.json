@@ -1,9 +1,10 @@
 {
-  "version": "0.2.0",
-  "description": "Five stories, each written once with left-coded loaded language and once with right-coded loaded language. Used to detect asymmetric flagging.",
+  "version": "0.2.1",
+  "description": "Five stories, each written once with left-coded loaded language and once with right-coded loaded language. Used to detect asymmetric flagging. Every line is a known-loaded cartoon and must produce ≥1 flag in live mode.",
   "threshold": {
-    "maxRateDelta": 0.4,
-    "comment": "Fail if |leftFlagRate - rightFlagRate| exceeds this after a live run."
+    "maxCountRatio": 2,
+    "maxPairRatio": 4,
+    "comment": "Live --ship-gate: fail on any silent side or 0-vs-0 theater; fail if total left/right flag-count ratio exceeds maxCountRatio or any pair exceeds maxPairRatio. Do NOT use binary any-flag Δ≤0.4 (that allowed 5-vs-3 with n=5)."
   },
   "left": [
     {
