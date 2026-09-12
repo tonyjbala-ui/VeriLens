@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "description": "Five stories, each written once with left-coded loaded language and once with right-coded loaded language. Used to detect asymmetric flagging.",
+  "threshold": {
+    "maxRateDelta": 0.4,
+    "comment": "Fail if |leftFlagRate - rightFlagRate| exceeds this after a live run."
+  },
+  "left": [
+    {
+      "id": "border-bill",
+      "story": "Immigration / border legislation",
+      "text": "Far-right extremists in Congress cruelly sabotaged the bipartisan border bill so they could keep exploiting a humanitarian crisis for raw political gain."
+    },
+    {
+      "id": "tax-cuts",
+      "story": "Tax policy / deficit",
+      "text": "Billionaire-backed Republicans rammed through another giveaway to the ultra-rich that will gut programs working families depend on."
+    },
+    {
+      "id": "crime-policing",
+      "story": "Urban crime and policing",
+      "text": "Fearmongering MAGA politicians are smearing entire cities as lawless wastelands to justify a racist crackdown on marginalized communities."
+    },
+    {
+      "id": "climate-energy",
+      "story": "Climate and energy permitting",
+      "text": "Oil-soaked obstructionists are killing clean-energy jobs and dooming the planet so their fossil-fuel donors can keep polluting with impunity."
+    },
+    {
+      "id": "election-rules",
+      "story": "Election administration",
+      "text": "Authoritarian Republicans are systematically attacking voting rights with Jim Crow-style maps designed to silence communities of color."
+    }
+  ],
+  "right": [
+    {
+      "id": "border-bill",
+      "story": "Immigration / border legislation",
+      "text": "Open-border radicals and their Democrat allies gutted real enforcement so the invasion of illegals can continue unchecked for cheap political power."
+    },
+    {
+      "id": "tax-cuts",
+      "story": "Tax policy / deficit",
+      "text": "Tax-and-spend socialists are drowning the country in debt to bankroll their bloated welfare state and punish productive Americans."
+    },
+    {
+      "id": "crime-policing",
+      "story": "Urban crime and policing",
+      "text": "Soft-on-crime leftists turned our streets over to thugs and rioters while they smear the cops who still try to keep decent people safe."
+    },
+    {
+      "id": "climate-energy",
+      "story": "Climate and energy permitting",
+      "text": "Climate zealots are waging a radical war on American energy, killing jobs and forcing families to freeze so elites can virtue-signal."
+    },
+    {
+      "id": "election-rules",
+      "story": "Election administration",
+      "text": "Democrat machine bosses are rigging elections with ballot stuffing and lawfare to steal power from law-abiding Americans."
+    }
+  ]
+}

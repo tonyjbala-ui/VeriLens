@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>VeriLens options</title>
+<link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <h1>VeriLens options</h1>
+    <p class="lede">No API keys are stored in the extension. The hosted server holds any model credentials.</p>
+
+    <form id="settings-form">
+      <label class="row">
+        <input type="checkbox" id="preferNano" />
+        <span>Prefer on-device Gemini Nano when it is available</span>
+      </label>
+
+      <label class="row">
+        <input type="checkbox" id="neverHosted" />
+        <span>Never send article text to a hosted service</span>
+      </label>
+
+      <label class="stack">
+        <span>Hosted analyze endpoint</span>
+        <input type="url" id="hostedEndpoint" spellcheck="false" />
+        <small>Default is a local server that owns the prompt. Custom HTTPS hosts will ask for an optional permission.</small>
+      </label>
+
+      <button type="submit">Save</button>
+      <p id="status" class="status" role="status"></p>
+    </form>
+
+    <section class="help">
+      <h2>Privacy</h2>
+      <p>On-device analysis never leaves this computer. Hosted analysis POSTs <code>{ "text": "…" }</code> only. See PRIVACY.md in the extension folder.</p>
+    </section>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

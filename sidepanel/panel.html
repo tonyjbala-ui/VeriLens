@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>VeriLens</title>
+<link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+  <header>
+    <h1>VeriLens</h1>
+    <span id="backend-badge" class="badge">—</span>
+  </header>
+
+  <div id="status-area" class="status">Click the VeriLens icon on an article page to begin.</div>
+
+  <div id="disclosure" class="disclosure hidden">
+    This analysis was sent to a hosted AI service for processing (on-device model wasn't available).
+    Article text left this device. <a href="#" id="learn-more">Why?</a>
+  </div>
+
+  <nav id="tabs" class="tabs hidden">
+    <button data-tab="original" class="tab active">Original</button>
+    <button data-tab="flags" class="tab">Flags &amp; Analysis</button>
+    <button data-tab="neutral" class="tab">Neutral Suggestion</button>
+  </nav>
+
+  <main id="panels" class="hidden">
+    <section id="panel-original" class="panel active"></section>
+    <section id="panel-flags" class="panel"></section>
+    <section id="panel-neutral" class="panel"></section>
+  </main>
+
+  <footer id="feedback" class="hidden">
+    <span>Was this analysis fair and accurate?</span>
+    <button id="fb-up" type="button">👍</button>
+    <button id="fb-down" type="button">👎</button>
+  </footer>
+
+  <script type="module" src="panel.js"></script>
+</body>
+</html>
